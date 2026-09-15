@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | White Apple Jeans</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans p-4 sm:p-6">
+
+    <div class="max-w-xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-md">
+        <h1 class="text-2xl font-bold mb-2 text-blue-900">📦 White Apple Jeans</h1>
+        <p class="text-sm text-gray-500 mb-6">Stock Manager Dashboard</p>
+
+        <form id="stock-form" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Product Title</label>
+                <input type="text" id="title" required class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm" placeholder="e.g. Slim Fit Denim Jeans">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Category</label>
+                    <select id="category" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm">
+                        <option value="pants">Pants & Jeans</option>
+                        <option value="shirts">Shirts</option>
+                        <option value="tshirts">T-Shirts</option>
+                        <option value="underwear">Underwear & Essentials</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Price (₹)</label>
+                    <input type="number" id="price" required class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm" placeholder="899">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Available Sizes (comma separated)</label>
+                <input type="text" id="sizes" required class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm" placeholder="28, 30, 32, 34 or M, L, XL">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Product Photo (Camera or Gallery)</label>
+                <input type="file" id="image-file" accept="image/*" required class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+            </div>
+
+            <div class="flex items-center gap-2 pt-2">
+                <input type="checkbox" id="in-stock" checked class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                <label for="in-stock" class="text-sm font-medium text-gray-700">In Stock</label>
+            </div>
+
+            <button type="submit" id="submit-btn" class="w-full bg-blue-900 text-white font-semibold py-3 rounded-lg hover:bg-blue-800 transition text-sm">
+                Publish Product to Live Website
+            </button>
+        </form>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://vbekvgjglcymsjoczejj.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_clOUgjgkkBar1K70rUJwMA_bw83rK5W';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        document.getElementById('stock-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.innerText = 'Uploading image and publishing...';
+
+            const title = document.getElementById('title').value;
+            const category = document.getElementById('category').value;
+            const price = parseFloat(document.getElementById('price').value);
+            const sizes = document.getElementById('sizes').value;
+            const inStock = document.getElementById('in-stock').checked;
+            const imageFile = document.getElementById('image-file').files[0];
+
+            try {
+                // 1. Upload image to Supabase Storage Bucket named 'product-images'
+                const fileExt = imageFile.name.split('.').pop();
+                const fileName = `${Date.now()}.${fileExt}`;
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('product-images')
+                    .upload(fileName, imageFile);
+
+                if (uploadError) throw uploadError;
+
+                // 2. Get Public URL of the uploaded image
+                const { data: { publicUrl } } = supabase.storage
+                    .from('product-images')
+                    .getPublicUrl(fileName);
+
+                // 3. Insert product details into Supabase table named 'products'
+                const { error: insertError } = await supabase.from('products').insert([
+                    { title, category, price, sizes, in_stock: inStock, image_url: publicUrl }
+                ]);
+
+                if (insertError) throw insertError;
+
+                alert('Success! Product is now live on the store website.');
+                document.getElementById('stock-form').reset();
+            } catch (err) {
+                alert('Error publishing product: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Publish Product to Live Website';
+            }
+        });
+    </script>
+</body>
+</html>

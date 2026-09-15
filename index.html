@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>White Apple Jeans | Men's Clothing Store Keesara</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+    <!-- Header Section -->
+    <header class="bg-blue-900 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center">
+            <div class="text-center sm:text-left mb-2 sm:mb-0">
+                <h1 class="text-2xl font-bold tracking-wide">White Apple Jeans</h1>
+                <p class="text-xs text-blue-200">Shop No 10, Old Village, Keesara, Secunderabad</p>
+            </div>
+            <a href="https://wa.me/917008793404?text=Hi,%20I%20want%20to%20check%20clothing%20availability%20at%20your%20store." target="_blank" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2 shadow">
+                💬 Chat on WhatsApp
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        
+        <!-- Store Banner / Intro -->
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-8 text-center border border-gray-100">
+            <h2 class="text-xl font-bold text-gray-900 mb-2">Men's Fashion & Daily Wear Catalog</h2>
+            <p class="text-gray-600 text-sm max-w-xl mx-auto">Browse our latest collection of jeans, shirts, t-shirts, and essentials. Visit our shop in Keesara or message us directly on WhatsApp to check size availability and reserve items!</p>
+        </div>
+
+        <!-- Category Filters -->
+        <div class="flex flex-wrap justify-center gap-2 mb-8">
+            <button onclick="filterCategory('all', event)" class="filter-btn active bg-blue-900 text-white px-4 py-2 rounded-full text-sm font-medium transition shadow-sm">All Stock</button>
+            <button onclick="filterCategory('pants', event)" class="filter-btn bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition">Pants & Jeans</button>
+            <button onclick="filterCategory('shirts', event)" class="filter-btn bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition">Shirts</button>
+            <button onclick="filterCategory('tshirts', event)" class="filter-btn bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition">T-Shirts</button>
+            <button onclick="filterCategory('underwear', event)" class="filter-btn bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-100 transition">Underwear & Essentials</button>
+        </div>
+
+        <!-- Dynamic Product Grid -->
+        <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <p class="text-center col-span-full text-gray-500 py-12">Loading live stock from inventory...</p>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-12 py-8 text-center text-sm text-gray-500">
+        <p class="font-semibold text-gray-800">White Apple Jeans - Keesara</p>
+        <p class="mt-1">Shop No 10, Old Village, Keesara, Medchal, Secunderabad, Telangana 501303</p>
+    </footer>
+
+    <!-- Supabase Integration Script -->
+    <script>
+        const SUPABASE_URL = 'https://vbekvgjglcymsjoczejj.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_clOUgjgkkBar1K70rUJwMA_bw83rK5W';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let allProducts = [];
+
+        async function fetchProducts() {
+            const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+            if (error) {
+                console.error('Error fetching products:', error);
+                document.getElementById('product-grid').innerHTML = '<p class="text-center col-span-full text-red-500 py-12">Error loading products. Please check table configuration.</p>';
+                return;
+            }
+            allProducts = data || [];
+            renderProducts(allProducts);
+        }
+
+        function renderProducts(products) {
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = '';
+
+            if (products.length === 0) {
+                grid.innerHTML = '<p class="text-center col-span-full text-gray-500 py-12">No products found in this category.</p>';
+                return;
+            }
+
+            products.forEach(p => {
+                const isOut = !p.in_stock;
+                const card = document.createElement('div');
+                card.className = `product-card bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 flex flex-col ${isOut ? 'opacity-60' : ''}`;
+                card.dataset.category = p.category;
+
+                card.innerHTML = `
+                    <div class="h-48 bg-gray-200 relative overflow-hidden flex items-center justify-center">
+                        <img src="${p.image_url}" alt="${p.title}" class="w-full h-full object-cover">
+                        ${isOut ? '<span class="absolute bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow">Out of Stock</span>' : ''}
+                    </div>
+                    <div class="p-4 flex-1 flex flex-col justify-between">
+                        <div>
+                            <span class="text-xs uppercase font-bold tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded">${p.category}</span>
+                            <h3 class="font-bold text-gray-900 mt-1">${p.title}</h3>
+                            <p class="text-lg font-extrabold text-gray-900 mt-1">₹${p.price}</p>
+                            <div class="mt-3">
+                                <span class="text-xs text-gray-500 block mb-1">Sizes:</span>
+                                <div class="flex flex-wrap gap-1 text-xs">
+                                    ${p.sizes ? p.sizes.split(',').map(size => `<span class="border px-2 py-1 rounded bg-gray-50">${size.trim()}</span>`).join('') : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <a href="https://wa.me/917008793404?text=Hi,%20I%20am%20interested%20in%20${encodeURIComponent(p.title)}%20(₹${p.price})." target="_blank" class="mt-4 block text-center ${isOut ? 'bg-gray-400 pointer-events-none' : 'bg-gray-900 hover:bg-blue-900'} text-white text-sm font-medium py-2 rounded-lg transition">
+                            ${isOut ? 'Unavailable' : 'Enquire on WhatsApp'}
+                        </a>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterCategory(category, event) {
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('active', 'bg-blue-900', 'text-white');
+                btn.classList.add('bg-white', 'text-gray-700', 'border', 'border-gray-300');
+            });
+            event.target.classList.remove('bg-white', 'text-gray-700', 'border', 'border-gray-300');
+            event.target.classList.add('active', 'bg-blue-900', 'text-white');
+
+            if (category === 'all') {
+                renderProducts(allProducts);
+            } else {
+                const filtered = allProducts.filter(p => p.category === category);
+                renderProducts(filtered);
+            }
+        }
+
+        // Load stock on page load
+        fetchProducts();
+    </script>
+
+    <!-- Cloudflare Web Analytics -->
+    <script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "d5128e24271b404689ac1d13c195bbe0"}'></script>
+    <!-- End Cloudflare Web Analytics -->
+</body>
+</html>
